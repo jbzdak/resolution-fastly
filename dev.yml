@@ -38,6 +38,7 @@ services:
       - postgres
     environment:
       - POSTGRES_USER=resolution_fastly
+    entrypoint: []
     volumes:
       - .:/app
 
