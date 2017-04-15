@@ -59,6 +59,8 @@ LOCAL_APPS = [
     # custom users app
     'resolution_fastly.users.apps.UsersConfig',
     # Your stuff: custom apps go here
+    'resolution_fastly.resolution.apps.ResolutionConfig',
+    'resolution_fastly.unit.apps.UnitConfig'
 ]
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -283,3 +285,9 @@ ADMIN_URL = r'^admin/'
 
 # Your common stuff: Below this line define 3rd party library settings
 # ------------------------------------------------------------------------------
+
+
+RESOLUTION_FASTLY = {
+    "PASSED_RESOLUTION_SIGNATURE": "U-{unit.short_name}-{date}-{idx}",
+    "PROPOSED_RESOLUTION_SIGNATURE": "PROPOSED-U-{unit.short_name}-{date}-{idx}"
+}

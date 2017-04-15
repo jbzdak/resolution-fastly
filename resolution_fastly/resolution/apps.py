@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class ResolutionConfig(AppConfig):
-    name = 'resolution'
+    name = 'resolution_fastly.resolution'

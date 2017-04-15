@@ -29,7 +29,6 @@ services:
     ports:
       - "8000:8000"
 
-
   pycharm:
     build:
       context: .
@@ -39,10 +38,9 @@ services:
     environment:
       - POSTGRES_USER=resolution_fastly
     entrypoint: []
+    command: /bin/true
     volumes:
       - .:/app
-
-
 
   mailhog:
     image: mailhog/mailhog
