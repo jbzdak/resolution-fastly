@@ -1,12 +1,17 @@
 # coding=utf8
 
 import datetime
+import typing
 
 from decorator import contextmanager
 from django.conf import settings
 from django.db import transaction
 
-from . import const, models
+
+
+from . import const
+
+from . import models
 from resolution_fastly.unit import models as unit_models
 
 
@@ -36,32 +41,46 @@ class ResolutionService(object):
 
     @classmethod
     @contextmanager
-    def on(cls, resolution: models.Resolution):
+    def on(cls, resolution: 'models.Resolution') -> 'ResolutionService':
         with transaction.atomic():
             try:
-                unit = unit_models.OrganisationalUnit.objects.filter(pk=resolution.unit.pk).select_for_update().get()
-                resolution = models.Resolution.objects.filter(pk=resolution.pk).select_for_update().get()
-                yield ResolutionService(unit, resolution)
+                unit = unit_models.OrganisationalUnit.objects.filter(
+                    pk=resolution.unit.pk).select_for_update().get()
+                resolution = models.Resolution.objects.filter(
+                    pk=resolution.pk).select_for_update().get()
+                yield ResolutionService(
+                    resolution=resolution,
+                    unit=unit
+                )
                 resolution.save()
             finally:
                 pass
 
-    def __init__(self, resolution: models.Resolution, unit: unit_models.OrganisationalUnit):
+    def __init__(
+        self,
+        resolution: 'models.Resolution',
+        unit: 'unit_models.OrganisationalUnit'
+    ):
         self.resolution = resolution
         self.unit = unit
 
-    def __format_signature(self, template: str, id_for_day: int, resolution: models.Resolution):
+    def __format_signature(
+        self,
+        template: str,
+        date: datetime.date,
+        id_for_day: int
+    ):
         return template.format(
             unit=self.unit,
-            resolution=resolution,
-            date=resolution.date_voting_finished.isoformat(),
-            today=resolution.date_voting_finished,
+            resolution=self.resolution,
+            date=date.isoformat(),
+            today=self.resolution.date_voting_finished,
             idx=id_for_day
         )
 
-    def __get_resolution_id(self):
+    def __get_resolution_id(self, resolution_state=True):
         todays_passed_resolutions = self.unit.resolutions.filter(
-            date_passed=self.resolution.date_voting_finished,
+            date_voting_finished=self.resolution.date_voting_finished,
             resolution_passed=True
         ).exclude(pk=self.resolution.pk)
         return todays_passed_resolutions.count() + 1
@@ -72,7 +91,7 @@ class ResolutionService(object):
         self.resolution.resolution_id = self.__format_signature(
             template=settings.RESOLUTION_FASTLY["PASSED_RESOLUTION_SIGNATURE"],
             id_for_day=self.__get_resolution_id(),
-            resolution=self.resolution
+            date=self.resolution.date_voting_finished
         )
 
     def all_have_voted(self) -> bool:
@@ -83,7 +102,7 @@ class ResolutionService(object):
     def verify_voter(self, voter):
         if self.resolution.resolution_passed is not None:
             raise VotingFinished()
-        if not self.resolution.unit.voters.filter(user=voter).exists():
+        if not self.resolution.unit.voters.filter(pk=voter.pk).exists():
             raise NotAVoter()
         if self.resolution.votes.filter(voter = voter).exists():
             raise AlreadyVoted()
@@ -92,11 +111,18 @@ class ResolutionService(object):
         self.verify_voter(voter)
         models.ResolutionVote.objects.create(
             resolution=self.resolution,
-            voter=self.unit.voters.get(user=voter),
-            vote=vote
+            voter=voter,
+            vote_type=vote
         )
         if self.all_have_voted():
             self.finish_voting()
+
+    def assign_initial_signature(self):
+        self.resolution.resolution_id = self.__format_signature(
+            template=settings.RESOLUTION_FASTLY["PROPOSED_RESOLUTION_SIGNATURE"],
+            id_for_day=self.resolution.pk,
+            date=datetime.date.today()
+        )
 
     def finish_voting(self):
         # NOTE: This assumes voting has reached minimum votes

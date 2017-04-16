@@ -24,6 +24,7 @@ services:
     environment:
       - POSTGRES_USER=resolution_fastly
       - USE_DOCKER=yes
+      - WERKZEUG_DEBUG_PIN=off
     volumes:
       - .:/app
     ports:
