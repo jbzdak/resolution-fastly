@@ -9,9 +9,7 @@ from django.db import transaction
 
 
 
-from . import const
-
-from . import models
+from . import const, models, tasks
 from resolution_fastly.unit import models as unit_models
 
 
@@ -41,7 +39,23 @@ class ResolutionService(object):
 
     @classmethod
     @contextmanager
+    def inplace(cls, resolution: 'models.Resolution'):
+        """
+        Create a service that does not take account to database. 
+        """
+        yield ResolutionService(resolution, resolution.unit)
+
+
+    @classmethod
+    @contextmanager
     def on(cls, resolution: 'models.Resolution') -> 'ResolutionService':
+        """
+        Create a service that will persist resolution in a database 
+        blocking it for updates along the way.
+        
+        :param resolution: 
+        :return: 
+        """
         with transaction.atomic():
             try:
                 unit = unit_models.OrganisationalUnit.objects.filter(
@@ -123,6 +137,9 @@ class ResolutionService(object):
             id_for_day=self.resolution.pk,
             date=datetime.date.today()
         )
+
+    def render_document(self):
+        tasks.render_resolution.delay(self.resolution.pk)
 
     def finish_voting(self):
         # NOTE: This assumes voting has reached minimum votes

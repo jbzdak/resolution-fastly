@@ -43,6 +43,9 @@ services:
     volumes:
       - .:/app
 
+  pandoc_api:
+    image: jbzdak/pandoc-rest-api
+
   mailhog:
     image: mailhog/mailhog
     ports:

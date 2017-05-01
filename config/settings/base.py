@@ -291,3 +291,5 @@ RESOLUTION_FASTLY = {
     "PASSED_RESOLUTION_SIGNATURE": "U-{unit.short_name}-{date}-{idx}",
     "PROPOSED_RESOLUTION_SIGNATURE": "PROPOSED-U-{unit.short_name}-{date}-{idx}"
 }
+
+PANDOC_API_LOCATION = "http://pandoc_api"

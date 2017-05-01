@@ -54,8 +54,6 @@ services:
       - "443"
     environment:
       - TERM=xterm
-
-
   redis:
     image: redis:latest
 
